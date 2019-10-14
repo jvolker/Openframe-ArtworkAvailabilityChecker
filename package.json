@@ -1,0 +1,20 @@
+{
+  "name": "openframe-artwork-availability-checker",
+  "version": "1.0.0",
+  "description": "Checks the public stream of an Openframe database for the availability of artwork.",
+  "main": "checkAvailability.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Jeremias Volker",
+    "url": "http://jeremiasvolker.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "is-url": "^1.2.4",
+    "openframe-jsclient": "^0.1.1",
+    "request": "^2.88.0"
+  }
+}
