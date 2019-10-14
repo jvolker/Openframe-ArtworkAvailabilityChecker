@@ -1,8 +1,8 @@
 const chalk = require('chalk'),
-  credentials = require('./credentials')
-  OF = require('openframe-jsclient'),
-  OF = new OF(),
+  credentials = require('./credentials'),
+  OF = new (require('openframe-jsclient'))(),
   isUrl = require('is-url');
+
 
 var http = require('http');
 http.globalAgent.maxSockets = 30;
@@ -19,6 +19,7 @@ OF.users.login(credentials)
 
 let artworks
 let available = 0
+let artworkTypes = []
 
 OF.artwork.fetch({
     limit: 0,                                
@@ -58,8 +59,11 @@ OF.artwork.fetch({
           
           if (response.statusCode == 200) {
             // console.log(artwork.id + chalk.green(' available'))
-            available++
-            // logSingleLine(finished + "/" + count);
+            available++            
+            
+            if (!artworkTypes[artwork.format]) artworkTypes[artwork.format] = 0;
+            
+            artworkTypes[artwork.format]++
           }
           else if (response.statusCode == 403) {
             console.log(artwork.id + chalk.red(' ' + response.statusCode + ' Forbidden '))
@@ -104,5 +108,10 @@ process.on ('exit', code => {
     console.log()
     console.log(chalk.green(available) + '/' + chalk.magenta(artworks.length) + ' artworks available')
     console.log(chalk.red(artworks.length - available) + ' artworks unavailable')
+    console.log()    
+    let artworkTypesKeysOrdered = Object.keys(artworkTypes).sort(function(a, b) {return -(artworkTypes[a] - artworkTypes[b])})
+    for (let index of artworkTypesKeysOrdered) {
+      console.log(index + ': ' + chalk.yellow(artworkTypes[index])) 
+    }
   }
 });
