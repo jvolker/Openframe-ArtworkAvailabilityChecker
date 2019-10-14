@@ -15,8 +15,8 @@ console.log(chalk.yellow('======================================================
 let artworks
 let artworkAvailable = 0
 let thumbnailsAvailable = 0
-let artworkTypeCounts = []
-let artworkUrlCounts = []
+let artworkTypeCounts = {}
+let artworkUrlCounts = {}
 
 function checkArtwork(artwork) {
   let artworkRequest = request({
@@ -151,20 +151,22 @@ process.on ('exit', code => {
     console.log(chalk.red(artworks.length - artworkAvailable) + '/' + artworks.length + ' artworks unavailable')
     console.log(chalk.green(thumbnailsAvailable) + '/' + artworks.length + ' thumbnails available')
     
-    // artwork counts
+    // artwork type counts
     console.log()
-    let artworkTypeCountsSorted = artworkTypeCounts.sort((a,b) => -(artworkTypeCounts[a] - artworkTypeCounts[b]))
-    for (let index of artworkTypeCounts) {
-      let count = artworkTypeCounts[index]
-      console.log(index + ': ' + chalk.yellow(count)) 
+    console.log('Artwork type counts:')
+    let artworkTypeCountsSortedKeys = Object.keys(artworkTypeCounts).sort((a,b) => -(artworkTypeCounts[a] - artworkTypeCounts[b]))
+    for (let artworkType of artworkTypeCountsSortedKeys) {
+      let count = artworkTypeCounts[artworkType]
+      console.log(artworkType + ': ' + chalk.yellow(count)) 
     }
     
     // duplicate artwork urls
+    console.log()
     console.log('Duplicate artwork URLs:')
-    let artworkUrlCountsSorted = artworkUrlCounts.sort((a,b) => artworkUrlCounts[a] - artworkUrlCounts[b])
-    for (let artworkUrl in artworkUrlCountsSorted) {
-      let count = artworkUrlCountsSorted[artworkUrl]
-      if (count > 1) console.log(artworkUrl + ': ' + chalk.yellow(count))
+    let artworkUrlCountsSortedKeys = Object.keys(artworkUrlCounts).sort((a,b) => -(artworkUrlCounts[a] - artworkUrlCounts[b]))
+    for (let artworkURL of artworkUrlCountsSortedKeys) {
+      let count = artworkUrlCounts[artworkURL]
+      if (count > 1) console.log(artworkURL + ': ' + chalk.yellow(count))
     }
   }
 });
