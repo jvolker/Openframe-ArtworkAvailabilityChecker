@@ -3,14 +3,19 @@ const chalk = require('chalk'),
   OF = new (require('openframe-jsclient'))(),
   isUrl = require('is-url');
 
+var http = require('http')
+http.globalAgent.maxSockets = 30
+var https = require('https')
+https.globalAgent.maxSockets = 30
+var request = require('request')
 
-var http = require('http');
-http.globalAgent.maxSockets = 30;
-var https = require('https');
-https.globalAgent.maxSockets = 30;
-var request = require('request');
+//  script options ------------------------------------------
 
-console.log(chalk.yellow('=====================================================================')); // just a visual divider on the console 
+let useLogin = true
+
+//  ------------------------------------------
+
+console.log(chalk.yellow('=====================================================================')) // just a visual divider on the console 
 
 let artworks
 let artworkAvailable = 0
@@ -18,7 +23,31 @@ let thumbnailsAvailable = 0
 let artworkTypeCounts = {}
 let artworkUrlCounts = {}
 
+function updateDatabase(artwork, isAvailable) {
+  OF.artwork.update(artwork.id, { 
+    is_public: false
+  })
+  .then(() => {
+    console.log(artwork.id + chalk.red(' Unpublished artwork'))
+  });
+}
+
+function emailUser(artwork) {
+  OF.user.fetchById(artwork.ownerId)
+  .then((user) => {
+    // check if user has email address
+    // send email 
+    
+    // console.log(artwork.id + chalk.yellow(' Emailed user'))
+  });
+}
+
 function checkArtwork(artwork) {
+  if (!isUrl(artwork.url)) {
+    console.log(artwork.id + chalk.red(' Invalid URL ') + artwork.url)
+    return
+  }
+
   let artworkRequest = request({
       url: artwork.url,
       // maxAttempts: 3,   // (default) try 3 times
@@ -57,6 +86,12 @@ function checkArtwork(artwork) {
       else {
         console.log(artwork.id + chalk.yellow(' ' + response.statusCode + ' unsure ')  + ' ' + artwork.url)
       } 
+      
+      if (response.statusCode != 200 && useLogin) {
+        console.log(artwork.id + ' unpublish artwork and email user')
+        // updateDatabase(artwork, false)
+        // emailUser(artwork)        
+      }
       
       artworkRequest.abort()
       // else if (response.statusCode == 400) {
@@ -98,11 +133,7 @@ function checkThumbnail(artwork) {
   } 
 }
 
-
-// Login is not needed to read public artworks but in order to return the results later on
-// OF.users.login(credentials)
-//   .then(token => {
-//     // console.log(token);
+function analysePublicArtwork() {
   OF.artwork.fetch({
     limit: 0,                                
     where: {                                 
@@ -116,29 +147,37 @@ function checkThumbnail(artwork) {
     // console.log(artworks[0])
     
     for (let artwork of artworks) {
-            
-      if (!isUrl(artwork.url)) {
-        console.log(artwork.id + chalk.red(' Invalid URL ') + artwork.url)
-        continue
-      }
-    
+                
       checkArtwork(artwork)
       checkThumbnail(artwork)
 
     }
   });
-  // });
+}
 
+function logout() {
+  OF.users.logout()
+    .then(() => {
+      // success, no response body
+      console.log("successfully logged out")
+    })
+    .catch(error => {
+      console.log(error);
+    });  
+}
 
+if (useLogin) {
+  // Login is not needed to read public artworks but in order to return the results later on
+  OF.users.login(credentials)
+    .then(token => {
+      // console.log(token);
+      analysePublicArtwork()
+    });  
+}
+else {
+  analysePublicArtwork()
+}
 
-// TODO: this currently throws an error
-// OF.users.logout()
-//   .then(() => {
-//     // success, no response body
-//   })
-//   .catch(error => {
-//     console.log(error);
-//   });
 
 
 // quick and dirty. doing this on exit ensures that all requests have finished
@@ -146,6 +185,8 @@ process.on ('exit', code => {
   if (code > 0) {
     console.log ('Hmm something went wrong');
   } else {
+    if (useLogin) logout()
+    
     console.log()
     console.log(chalk.green(artworkAvailable) + '/' + artworks.length + ' artworks available')
     console.log(chalk.red(artworks.length - artworkAvailable) + '/' + artworks.length + ' artworks unavailable')
